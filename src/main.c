@@ -569,9 +569,19 @@ int main(int argc, char **argv){
                     if(buffer2 == NULL){
                         log_mesg(0, 1, 1, debug, "%s, %i, ERROR:%s", __func__, __LINE__, strerror(errno));
                     }
+                    /* FIXME: This looks wrong
+                     * Same code is also in chkimg.c and restore.c */
                     memcpy(buffer2, buffer, image_hdr.block_size);
                     memcpy(buffer2+image_hdr.block_size, crc_buffer, CRC_SIZE);
+                    /* buffer2 now contains:
+                     * [DATA                                  ][CRC ] */
                     memcpy(buffer, buffer2+CRC_SIZE, image_hdr.block_size);
+                    /* But we copy from it:
+                     * [SKIP][COPIED                                ]
+                     * So we're copying the data block + the CRC, but skipping
+                     * the first 4 bytes. I haven't looked closely enough to
+                     * understand the context, but this doesn't look likely to
+                     * be correct. */
 
                     crc_ck2 = crc32(crc_ck2, buffer, r_size);
                     c_size = read_all(&dfr, crc_buffer, CRC_SIZE, &opt);
